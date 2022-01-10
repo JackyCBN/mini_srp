@@ -7,23 +7,61 @@ public class CameraRenderer
 {
     ScriptableRenderContext context;
     Camera camera;
+
+    const string bufferName = "My Render Camera";
+    CommandBuffer buffer = new CommandBuffer
+    {
+        name = bufferName
+    };
+
     public void Render(ScriptableRenderContext _context, Camera _camera)
     {
         context = _context;
         camera = _camera;
 
-        ScriptableCullingParameters cullingParameters;
-        if (!camera.TryGetCullingParameters(out cullingParameters))
-        {
-            return;
-        }
-        CullingResults cullingResult = context.Cull(ref cullingParameters);
+        Setup();
+        DrawVisibleGeometry();
+        Submit();
+    }
 
-        DrawingSettings drawingSettings = new DrawingSettings();
-        FilteringSettings filterSettings = new FilteringSettings();
+    private void Setup()
+    {
+        buffer.BeginSample(bufferName);
+        buffer.ClearRenderTarget(true, true, Color.clear);
+        ExecuteBuffer();
+        
+        context.SetupCameraProperties(camera);
+    }
 
-        context.DrawRenderers(cullingResult, ref drawingSettings, ref filterSettings);
+    private void DrawVisibleGeometry()
+    {
+        //ScriptableCullingParameters cullingParameters;
+        //if (!camera.TryGetCullingParameters(out cullingParameters))
+        //{
+        //    return;
+        //}
+        //CullingResults cullingResult = context.Cull(ref cullingParameters);
+
+        //DrawingSettings drawingSettings = new DrawingSettings();
+        //FilteringSettings filterSettings = new FilteringSettings();
+
+        //context.DrawRenderers(cullingResult, ref drawingSettings, ref filterSettings);
         //context
         context.DrawSkybox(camera);
+    }
+
+    private void Submit()
+    {
+
+        buffer.EndSample(bufferName);
+        ExecuteBuffer();
+        context.Submit();
+        
+    }
+
+    void ExecuteBuffer()
+    {
+        context.ExecuteCommandBuffer(buffer);
+        buffer.Clear();
     }
 }
